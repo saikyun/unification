@@ -55,10 +55,13 @@
 
 
 (let [env @{'?+ '(Number Number => Number)}
-      adder-form (parse-defn '(defn adder
-                                [x y]
-                                (+ x y)))
-      types-of-adder (type-of-defn adder-form)]
+      adder-form '(defn adder
+                    [x y]
+                    (+ x y))
+      parsed-adder-form (parse-defn adder-form)
+      types-of-adder (type-of-defn parsed-adder-form)]
+
+  (printf "defn form: %P" adder-form)
 
   (printf "type of defn: %P" types-of-adder)
 
