@@ -5,7 +5,7 @@
 ```
 git clone https://github.com/saikyun/unification
 cd unification
-janet example.janet
+janet examples/example.janet
 #=>
 defn form:
 (defn adder
