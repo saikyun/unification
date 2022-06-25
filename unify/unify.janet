@@ -1,4 +1,4 @@
-(import ./parse :as p)
+(import ./parse :as p :fresh true)
 
 (defn variable?
   [s]
@@ -34,6 +34,18 @@
     :else
     (put bindings variable s)))
 
+(defn unify-dictionaries
+  [d1 d2 bindings]
+  (let [ks (-> (array/concat (keys d1) (keys d2))
+               distinct)]
+    (reduce
+      (fn [bindings k]
+        (unify (get d1 k)
+               (get d2 k)
+               bindings))
+      bindings
+      ks)))
+
 (varfn unify
   [expr1 expr2 &opt bindings]
   (default bindings @{})
@@ -55,6 +67,10 @@
            (unify (first expr1)
                   (first expr2))
            (unify (drop 1 expr1) (drop 1 expr2))))
+
+    (and (dictionary? expr1)
+         (dictionary? expr2))
+    (unify-dictionaries expr1 expr2 bindings)
 
     :error (error (string/format "fail: %p can't be unified with %p" expr1 expr2))
     #
@@ -82,15 +98,20 @@
 # (unify ['?a '?a] [10 20])
 # ^ both of these are correctly throwing errors
 
+(import spork/fmt)
+
 (defn code->bindings
   ``
   Takes code, returns the resulting type bindings.
   ``
   [code &opt bindings]
   (let [ast (p/parse-expr code)
-        _ (printf "ast: %P" ast)
+        _ (print "ast: ")
+        _ (fmt/format-print (string/format "%p" ast))
         types (p/type-of-expr ast)
-        _ (printf "types: %P" types)
+        _ (print "types: ")
+        _ (fmt/format-print (string/format "%p" types))
         env (unify-kvs (first types) bindings)
-        _ (printf "bindings: %P" bindings)]
+        _ (print "bindings: ")
+        _ (fmt/format-print (string/format "%p" bindings))]
     env))

@@ -18,11 +18,43 @@
    :args (map ->hole args)
    :body (parse-expr body)})
 
+(defn parse-kv
+  [k v]
+  [(->hole k) (parse-expr v)])
+
+(defn parse-bindings
+  [bindings]
+  (let [[k v] (take 2 bindings)
+        rest (drop 2 bindings)]
+    ;[(parse-kv k v)
+      ;(if (empty? rest)
+         []
+         (parse-bindings rest))]))
+
+(defn parse-let
+  [[_ bindings body]]
+  {:type :let
+   :name (->hole 'let)
+   :bindings (parse-bindings bindings)
+   :body (parse-expr body)})
+
+(defn parse-get
+  [[_ container kw]]
+  {:type :get
+   :dict (parse-expr container)
+   :key (->hole (string ":" kw))})
+
 (defn parse-call
   [[f & args]]
   (cond
     (= f 'defn)
     (parse-defn [f ;args])
+
+    (= f 'let)
+    (parse-let [f ;args])
+
+    (= f 'get)
+    (parse-get [f ;args])
 
     :else
     {:type :call
@@ -87,13 +119,36 @@
       ;types]
      ret]))
 
+(defn type-of-let
+  [{:name name :bindings bindings :body body}]
+  (let [[types ret] (type-of-expr body)]
+    [[;(tracev (mapcat
+                 (fn [[k v]]
+
+                   (let [[types ret] (type-of-expr v)]
+                     [[k ret]
+                      ;types])) bindings))
+      ;types]
+     ret]))
+
+(defn type-of-get
+  [{:dict dict :key kw}]
+  [[[dict {kw '?get-type}]]
+   '?get-type])
+
 (varfn type-of-expr
   [expr]
   (def {:type type} expr)
 
   (cond
+    (= :let type)
+    (type-of-let expr)
+
     (= :defn type)
     (type-of-defn expr)
+
+    (= :get type)
+    (type-of-get expr)
 
     (= :call type)
     (type-of-call expr)
