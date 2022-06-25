@@ -1,4 +1,4 @@
-(use ./unify)
+(use ../unify/unify)
 
 (defn adder
   [x y]

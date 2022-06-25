@@ -1,3 +1,5 @@
+(import ./parse :as p)
+
 (defn variable?
   [s]
   (and (symbol? s) (= (chr "?") (first s))))
@@ -58,6 +60,13 @@
     #
 ))
 
+(defn unify-kvs
+  [kvs &opt bindings]
+  (unify
+    (map first kvs)
+    (map |(get $ 1) kvs)
+    bindings))
+
 (assert (deep= @{'?a 20} (unify '?a 20)))
 (assert (deep= @{'?a 20} (unify 20 '?a)))
 (assert (deep= (unify ['?a 10] [20 '?b]) (unify ['?a 10] [20 '?b])))
@@ -72,3 +81,16 @@
 # (pp (unify ['?a '?b] [20 '(10 '?b)]))
 # (unify ['?a '?a] [10 20])
 # ^ both of these are correctly throwing errors
+
+(defn code->bindings
+  ``
+  Takes code, returns the resulting type bindings.
+  ``
+  [code &opt bindings]
+  (let [ast (p/parse-expr code)
+        _ (printf "ast: %P" ast)
+        types (p/type-of-expr ast)
+        _ (printf "types: %P" types)
+        env (unify-kvs (first types) bindings)
+        _ (printf "bindings: %P" bindings)]
+    env))
